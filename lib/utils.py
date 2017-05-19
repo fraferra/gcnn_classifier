@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import scipy.sparse
 import numpy as np
 import time, re
+import urllib.request
 
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Helpers to process text documents.
 
@@ -158,6 +160,25 @@ class Text20News(TextDataset):
         assert max(self.labels) + 1 == len(self.class_names)
         N, C = len(self.documents), len(self.class_names)
         print('N = {} documents, C = {} classes'.format(N, C))
+
+
+class TextBeers(TextDataset):
+    def __init__(self, **params):
+        def parseData(fname):
+            for l in urllib.request.urlopen(fname):
+                yield eval(l)
+                
+        dataset = list(parseData("http://jmcauley.ucsd.edu/cse190/data/beer/beer_50000.json"))
+        self.documents = [x['review/text'] for x in dataset]
+        self.labels = np.array([int(x['review/overall']*2) for x in dataset])
+        self.class_names = list(range(10))
+        print(max(self.labels),len(self.class_names))
+        assert max(self.labels)  == len(self.class_names)
+        tf = TfidfVectorizer(sublinear_tf="log")
+        self.data = tf.fit_transform(self.documents)
+        N, C = len(self.documents), len(self.class_names)
+        print('N = {} documents, C = {} classes'.format(N, C))
+
 
 class TextRCV1(TextDataset):
     def __init__(self, **params):
