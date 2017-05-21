@@ -163,21 +163,29 @@ class Text20News(TextDataset):
 
 
 class TextBeers(TextDataset):
-    def __init__(self, **params):
+    def __init__(self, test=False):
         def parseData(fname):
             for l in urllib.request.urlopen(fname):
                 yield eval(l)
                 
         dataset = list(parseData("http://jmcauley.ucsd.edu/cse190/data/beer/beer_50000.json"))
-        self.documents = [x['review/text'] for x in dataset]
-        self.labels = np.array([int(x['review/overall']*2) for x in dataset])
-        self.class_names = list(range(10))
+        
+        dataset = [x for x in dataset if x['review/overall'] > 1.5]
+        limit = 40000
+        if test:
+            self.documents = [x['review/text'] for x in dataset][limit:]
+            self.labels = np.array([int(x['review/overall'])-2 for x in dataset])[limit:]
+        else:
+            self.documents = [x['review/text'] for x in dataset][:limit]
+            self.labels = np.array([int(x['review/overall'])-2 for x in dataset])[:limit]
+        self.class_names = list(range(2,6))
         print(max(self.labels),len(self.class_names))
-        assert max(self.labels)  == len(self.class_names)
-        tf = TfidfVectorizer(sublinear_tf="log")
-        self.data = tf.fit_transform(self.documents)
+        assert len(set(self.labels))  == len(self.class_names)
+        #tf = TfidfVectorizer(sublinear_tf="log")
+        #self.data = tf.fit_transform(self.documents)
         N, C = len(self.documents), len(self.class_names)
         print('N = {} documents, C = {} classes'.format(N, C))
+        
 
 
 class TextRCV1(TextDataset):
